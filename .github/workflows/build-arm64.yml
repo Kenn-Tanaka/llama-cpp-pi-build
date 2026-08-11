@@ -1,0 +1,38 @@
+name: Build llama.cpp for ARM64
+
+on:
+  workflow_dispatch: # ブラウザ上から手動でビルドを開始できるようにする設定
+
+jobs:
+  build-arm64:
+    # GitHubが提供する公式のARM64版Ubuntu環境
+    runs-on: ubuntu-24.04-arm
+    
+    steps:
+      - name: Checkout llama.cpp repository
+        uses: actions/checkout@v4
+        with:
+          repository: ggml-org/llama.cpp
+          # 常に最新のソースコードを取得します
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake
+
+      - name: Build with CMake
+        run: |
+          cmake -B build
+          # -j$(nproc) で利用可能な全CPUコアを使って並列コンパイル
+          cmake --build build --config Release -j$(nproc)
+
+      - name: Upload Binaries as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama-cpp-arm64-binaries
+          # 必要な実行モジュールだけを抽出してアップロード
+          path: |
+            build/bin/llama-cli
+            build/bin/llama-server
+          retention-days: 7 # ダウンロード可能な保持期間（7日間）
+          
